@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador POPs - Operador de Trem</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-danger: #dc2626;
+            --accent-success: #16a34a;
+            --text-color: #1f2937;
+            --text-muted: #4b5563;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Botão Finalizar Fixo (Sticky) */
+        .sticky-action-bar {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: rgba(244, 246, 249, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 10px 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-finish {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--accent-danger);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-finish:active {
+            background-color: #b91c1c;
+        }
+
+        /* Container das Questões */
+        .quiz-container {
+            max-width: 600px;
+            margin: 15px auto;
+            padding: 0 15px;
+        }
+
+        /* Card de Questão */
+        .question-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+        }
+
+        .question-number {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--secondary-color);
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* Opções de Resposta */
+        .options-list {
+            list-style: none;
+        }
+
+        .option-item {
+            margin-bottom: 10px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .option-label input[type="radio"] {
+            margin-top: 3px;
+            margin-right: 12px;
+            min-width: 18px;
+            min-height: 18px;
+        }
+
+        .option-label:active {
+            background-color: #f3f4f6;
+        }
+
+        /* Classes aplicadas na checagem de respostas */
+        .option-label.selected {
+            border-color: var(--secondary-color);
+            background-color: #eff6ff;
+        }
+
+        .option-label.correct {
+            border-color: var(--accent-success) !important;
+            background-color: #f0fdf4 !important;
+            font-weight: 600;
+        }
+
+        .option-label.incorrect {
+            border-color: var(--accent-danger) !important;
+            background-color: #fef2f2 !important;
+        }
+
+        /* Caixa de Justificativa */
+        .feedback-box {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #eff6ff;
+            border-left: 4px solid var(--secondary-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #1e40af;
+            display: none;
+        }
+
+        /* Painel de Resultados */
+        .results-panel {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid var(--primary-color);
+        }
+
+        .results-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .results-percentage {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .btn-restart {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Desabilitar interações pós-finalização */
+        .disabled-click {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simulador de Fixação: POPs Operacionais</h1>
+        <p>Memorização focada nos Códigos, Números e Temas</p>
+    </header>
+
+    <div class="sticky-action-bar">
+        <button class="btn-finish" id="finishBtn" onclick="finishQuiz()">
+            📋 Finalizar Simulado Agora
+        </button>
+    </div>
+
+    <div class="quiz-container">
+        <div class="results-panel" id="resultsPanel">
+            <h2>Resultado do Simulado</h2>
+            <div class="results-score" id="scoreText">0 / 20</div>
+            <div class="results-percentage" id="percentText">0% de acertos</div>
+            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                Abaixo você confere as justificativas azuis de cada uma das questões.
+            </p>
+            <button class="btn-restart" onclick="window.location.reload()">Refazer Simulado</button>
+        </div>
+
+        <form id="quizForm">
+            <div id="questionsContainer"></div>
+        </form>
+    </div>
+
+    <script>
+        // Banco de Dados Dinâmico focado estritamente nos POPs fornecidos no material
+        const rawQuestions = [
+            {
+                q: "Qual é o POP responsável por definir quem é o Operador de Trem e o que ele faz dentro de suas atribuições fundamentais?",
+                options: ["POP 1MRO 0026", "POP 1MRO 0015", "POP 1MRO 0010", "POP 1MRO 0011"],
+                correct: 0,
+                explain: "O POP 1MRO 0026 trata especificamente do Operador de Trem (papel, quem é e o que faz)."
+            },
+            {
+                q: "O procedimento operacional que estabelece as regras para a realização da 'Preparação e despreparação de trens' é codificado sob qual número?",
+                options: ["POP 1MRO 0026", "POP 1MRO 0015", "POP 1MRO 0010", "POP 1MRO 0008"],
+                correct: 1,
+                explain: "A preparação e despreparação de trens é regida pelo POP 1MRO 0015 (Agrupamento: EU como operador)."
+            },
+            {
+                q: "Para realizar a rotina diária de verificação das condições do trem antes do início ou durante a operação, qual regulamento deve ser seguido?",
+                options: ["POP 1MRO 0015", "POP 1MRO 0011", "POP 1MRO 0010", "POP 9QSM 0016"],
+                correct: 2,
+                explain: "A 'Vistoria diária do trem' é o POP 1MRO 0010 (Agrupamento: O TREM)."
+            },
+            {
+                q: "Se ocorrer um incidente de poluição ou contaminação na via ferroviária, qual diretriz de emergência ambiental deve ser acionada?",
+                options: ["POP 9QSM 0016", "POP 1MRO 0020", "POP 1MRO 0011", "POP 1MRO 0008"],
+                correct: 0,
+                explain: "Emergências ecológicas/ambientais são padronizadas pelo POP 9QSM 0016 (Prefixos QSM indicam Qualidade, Saúde e Meio Ambiente)."
+            },
+            {
+                q: "Qual o procedimento correto a ser consultado quando for necessário realizar o acionamento dos dispositivos de emergência instalados nos trens?",
+                options: ["POP 1MRO 0010", "POP 1MRO 0020", "POP 1MRO 0008", "POP 1MRO 0026"],
+                correct: 1,
+                explain: "O acionamento dos dispositivos de emergência do próprio trem é mapeado pelo POP 1MRO 0020."
+            },
+            {
+                q: "Em um cenário crítico onde uma composição falha e precisa ser empurrada ou puxada na via por outra unidade, qual norma disciplina a operação?",
+                options: ["POP 1MRO 0011", "POP 1MRO 0015", "POP 1MRO 0010", "POP 1MRO 0008"],
+                correct: 3,
+                explain: "A operação de socorro ou 'Reboque de trem por outro trem' é normatizada pelo POP 1MRO 0008."
+            },
+            {
+                q: "Qual POP estabelece as diretrizes para a padronização de atuação, critérios operacionais e classificação dos níveis de ocorrência?",
+                options: ["POP 1MRO 0011", "POP 1MRO 0026", "POP 1MRO 0015", "POP 9QSM 0016"],
+                correct: 0,
+                explain: "A padronização de critérios e níveis de ocorrência operacional fica a cargo do POP 1MRO 0011."
+            },
+            {
+                q: "Lembrando da regra mnemônica de que números menores são mais fundamentais na série 1MRO, ordene mentalmente as prioridades de segurança. O reboque de trens é o número mais baixo desta série, sendo ele:",
+                options: ["POP 1MRO 0008", "POP 1MRO 0010", "POP 1MRO 0011", "POP 1MRO 0015"],
+                correct: 0,
+                explain: "Correto! O número mais baixo da série 1MRO apresentado é o 0008 (Reboque)."
+            },
+            {
+                q: "No contexto do agrupamento 'EMERGÊNCIAS', existem três procedimentos fundamentais listados. Qual das alternativas possui apenas códigos válidos de emergência baseados em POPs?",
+                options: ["POP 9QSM 0016, POP 1MRO 0020 e POP 1MRO 0008", "POP 1MRO 0026, POP 1MRO 0015 e POP 1MRO 0010", "POP 1MRO 0011, POP 9QSM 0016 e POP 1MRO 0026", "POP 1MRO 0010, POP 1MRO 0020 e POP 1MRO 0008"],
+                correct: 0,
+                explain: "Os três POPs de emergência são: 9QSM 0016 (Ambiental), 1MRO 0020 (Dispositivos) e 1MRO 0008 (Reboque)."
+            },
+            {
+                q: "Associando o tema com o prefixo correto: Se você precisa estudar a 'Vistoria diária do trem', você deve procurar o prefixo operacional 'POP 1MRO' seguido por qual numeração?",
+                options: ["0010", "0026", "0015", "0011"],
+                correct: 0,
+                explain: "Vistoria diária do trem equivale exatamente ao código POP 1MRO 0010."
+            },
+            {
+                q: "Ao assumir o turno, a verificação do papel do condutor e como ele se posiciona profissionalmente é regulada pelo POP 1MRO 0026. Este documento pertence a qual agrupamento contextual?",
+                options: ["👤 EU como operador", "🚆 O TREM", "🚨 EMERGÊNCIAS", "📋 PADRÕES E PROCEDIMENTOS"],
+                correct: 0,
+                explain: "O POP 1MRO 0026 pertence ao agrupamento 'EU como operador' (quem sou, o que faço)."
+            },
+            {
+                q: "O POP 1MRO 0015 trata de um procedimento crítico executado nas vias de pátio ou terminais que antecede a prestação de serviço comercial. Que procedimento é esse?",
+                options: ["Preparação e despreparação de trens", "Vistoria diária de truques e rodeiros", "Acionamento de freios de emergência", "Reboque de materiais rodantes falhos"],
+                correct: 0,
+                explain: "O POP 1MRO 0015 dita exatamente os passos para a 'Preparação e despreparação de trens'."
+            },
+            {
+                q: "Completar a frase: 'O POP ______ define os níveis de gravidade de uma ocorrência operacional na linha ferroviária, garantindo atuação padronizada.'",
+                options: ["1MRO 0011", "1MRO 0010", "1MRO 0026", "9QSM 0016"],
+                correct: 0,
+                explain: "O preenchimento correto é POP 1MRO 0011, que padroniza os critérios e níveis de ocorrência."
+            },
+            {
+                q: "Assinale a alternativa que correlaciona de forma incorreta o número do POP com a sua respectiva aplicação técnica:",
+                options: ["POP 1MRO 0010 — Reboque de trem por avaria mecânica", "POP 1MRO 0015 — Preparação e despreparação de trens", "POP 1MRO 0026 — Operador de trem (Funções)", "POP 9QSM 0016 — Emergência ambiental na via"],
+                correct: 0,
+                explain: "A correlação está errada porque o POP 1MRO 0010 é para a 'Vistoria diária do trem'. O reboque é regulado pelo 0008."
+            },
+            {
+                q: "Durante a condução do trem, caso o operador visualize uma situação de iminente risco ambiental (como vazamento de óleo ou poluentes), ele deverá reportar a ocorrência com base nas regras do:",
+                options: ["POP 9QSM 0016", "POP 1MRO 0020", "POP 1MRO 0011", "POP 1MRO 0010"],
+                correct: 0,
+                explain: "Qualquer mitigação ou ação relacionada a acidentes ecológicos na operação ferroviária recai sobre o POP 9QSM 0016."
+            },
+            {
+                q: "Qual a sequência numérica crescente correta dos POPs associados especificamente ao agrupamento 'EU como operador' e 'O TREM'?",
+                options: ["POP 1MRO 0010 e POP 1MRO 0015", "POP 1MRO 0015 e POP 1MRO 0026", "POP 1MRO 0026 e POP 1MRO 0015", "POP 1MRO 0010 e POP 1MRO 0026"],
+                correct: 1,
+                explain: "A sequência crescente para os documentos do operador e o início da movimentação do trem é 0015 (Preparação) e 0026 (Operador)."
+            },
+            {
+                q: "Se você se deparar com uma questão de prova exigindo o exato procedimento regulamentar para o 'Acionamento dos dispositivos de emergência do trem', sua resposta correta deve apontar para:",
+                options: ["POP 1MRO 0020", "POP 1MRO 0011", "POP 1MRO 0008", "POP 9QSM 0016"],
+                correct: 0,
+                explain: "O acionamento dos dispositivos técnicos de emergência embarcados no material rodante é regido pelo POP 1MRO 0020."
+            },
+            {
+                q: "Por que a memorização contextualizada (separada em blocos como 'Eu', 'O Trem', 'Emergências') é recomendada para o estudo dos POPs ferroviários?",
+                options: ["Porque o cérebro retém contexto melhor que meras sequências lineares de numeração", "Porque os números dos POPs mudam de acordo com o modelo de sinalização da via", "Porque a numeração dos POPs é aleatória e não possui lógica sequencial de criação", "Porque os operadores de trem não têm acesso aos números, apenas aos temas"],
+                correct: 0,
+                explain: "O cérebro fixa com muito mais facilidade as regras quando associadas à utilidade ('O que faço com isso?') em vez de listas isoladas de números."
+            },
+            {
+                q: "Um trem de passageiros ou carga apresentou uma avaria intratável nos sistemas de tração. O Centro de Controle Operacional determina a junção de outra composição para tração mútua. Qual o POP de referência para a execução segura da manobra?",
+                options: ["POP 1MRO 0008", "POP 1MRO 0010", "POP 1MRO 0020", "POP 1MRO 0011"],
+                correct: 0,
+                explain: "O acoplamento emergencial e movimentação conjunta é o procedimento de Reboque, ditado pelo POP 1MRO 0008."
+            },
+            {
+                q: "A identificação do escopo de atuação técnica, perfil profissional e limites de manobra permitidos diretamente ao cargo de Operador de Trem estão consolidados em qual documento padrão?",
+                options: ["POP 1MRO 0026", "POP 1MRO 0015", "POP 1MRO 0011", "POP 1MRO 0010"],
+                correct: 0,
+                explain: "Quem define a identidade operacional e funcional do profissional na cabine é o POP 1MRO 0026."
+            }
+        ];
+
+        // Função para embaralhar alternativas e as questões
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Preparar banco de dados rodando um embaralhamento para não viciar a ordem
+        const questions = shuffleArray([...rawQuestions]);
+
+        // Renderizar dinamicamente todas as perguntas na aba única (Fila Vertical)
+        const container = document.getElementById('questionsContainer');
+        
+        questions.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `q-card-${index}`;
+
+            const qNumber = document.createElement('div');
+            qNumber.className = 'question-number';
+            qNumber.innerText = `Questão ${index + 1}`;
+
+            const qText = document.createElement('div');
+            qText.className = 'question-text';
+            qText.innerText = item.q;
+
+            const optionsList = document.createElement('ul');
+            optionsList.className = 'options-list';
+
+            item.options.forEach((opt, optIndex) => {
+                const li = document.createElement('li');
+                li.className = 'option-item';
+
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                label.id = `label-${index}-${optIndex}`;
+                
+                // Evento para pintar visualmente o radio button selecionado pelo usuário
+                label.addEventListener('click', function() {
+                    if(!document.getElementById('resultsPanel').style.display || document.getElementById('resultsPanel').style.display === 'none') {
+                        // Limpa seleção anterior do mesmo bloco
+                        for(let k=0; k<item.options.length; k++) {
+                            document.getElementById(`label-${index}-${k}`).classList.remove('selected');
+                        }
+                        label.classList.add('selected');
+                    }
+                });
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `question-${index}`;
+                radio.value = optIndex;
+                radio.id = `radio-${index}-${optIndex}`;
+
+                const textSpan = document.createElement('span');
+                textSpan.innerText = opt;
+
+                label.appendChild(radio);
+                label.appendChild(textSpan);
+                li.appendChild(label);
+                optionsList.appendChild(li);
+            });
+
+            const feedback = document.createElement('div');
+            feedback.className = 'feedback-box';
+            feedback.id = `feedback-${index}`;
+            feedback.innerText = `💡 Explicação: ${item.explain}`;
+
+            card.appendChild(qNumber);
+            card.appendChild(qText);
+            card.appendChild(optionsList);
+            card.appendChild(feedback);
+            container.appendChild(card);
+        });
+
+        // Executar Correção Completa e Travar Inputs
+        function finishQuiz() {
+            let score = 0;
+            const total = questions.length;
+
+            // Percorrer todas as questões renderizadas na fila
+            questions.forEach((item, index) => {
+                const radios = document.getElementsByName(`question-${index}`);
+                let selectedValue = -1;
+
+                for (let i = 0; i < radios.length; i++) {
+                    if (radios[i].checked) {
+                        selectedValue = parseInt(radios[i].value);
+                        break;
+                    }
+                }
+
+                // Pintar acertos e erros
+                for (let i = 0; i < radios.length; i++) {
+                    const label = document.getElementById(`label-${index}-${i}`);
+                    
+                    if (i === item.correct) {
+                        label.classList.add('correct'); // Destaca a certa em verde
+                    } else if (selectedValue === i && selectedValue !== item.correct) {
+                        label.classList.add('incorrect'); // Destaca a marcada errada em vermelho
+                    }
+                    
+                    // Bloqueia cliques posteriores
+                    label.classList.add('disabled-click');
+                }
+
+                if (selectedValue === item.correct) {
+                    score++;
+                }
+
+                // Revela a caixa de justificativa azul estruturada
+                document.getElementById(`feedback-${index}`).style.display = 'block';
+            });
+
+            // Cálculos Finais e Exibição do Painel no Topo
+            const percentage = Math.round((score / total) * 100);
+            document.getElementById('scoreText').innerText = `${score} / ${total}`;
+            document.getElementById('percentText').innerText = `${percentage}% de acertos`;
+            
+            const resultsPanel = document.getElementById('resultsPanel');
+            resultsPanel.style.display = 'block';
+            
+            // Oculta botão fixo para liberar espaço visual pós-teste
+            document.getElementById('finishBtn').style.display = 'none';
+
+            // Rolagem suave automática para o topo para visualizar o resultado final
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
